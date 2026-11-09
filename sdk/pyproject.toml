@@ -1,0 +1,13 @@
+[project]
+name = "aiflags"
+version = "0.1.0"
+description = "SDK for AI feature flags with gradual rollout"
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

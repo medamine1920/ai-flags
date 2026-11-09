@@ -1,0 +1,436 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>AI Flag Platform Map</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column; the interactive system map is the centerpiece, then two paths, the parts, and a rollout told start to finish. */
+:root {
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --ink: #16202a;
+  --muted: #5a6875;
+  --line: #c9d2da;
+  --zone: #e9edf1;
+  --accent: #0d7a6f;
+  --accent-soft: #dcf1ee;
+  --base: #2f63b5;
+  --base-soft: #e2ebf8;
+  --exp: #b86e00;
+  --exp-soft: #fbedd6;
+  --bad: #c2352b;
+  --bad-soft: #fbe3e1;
+  --font-display: "Bricolage Grotesque", "IBM Plex Sans", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1519; --surface: #172128; --ink: #e4ebef; --muted: #98a7b3; --line: #33424d; --zone: #131c22;
+    --accent: #3cc2b2; --accent-soft: #123a37; --base: #7aa6ec; --base-soft: #1a2a44;
+    --exp: #f0a63c; --exp-soft: #3b2a10; --bad: #f0796f; --bad-soft: #401a18; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1519; --surface: #172128; --ink: #e4ebef; --muted: #98a7b3; --line: #33424d; --zone: #131c22;
+  --accent: #3cc2b2; --accent-soft: #123a37; --base: #7aa6ec; --base-soft: #1a2a44;
+  --exp: #f0a63c; --exp-soft: #3b2a10; --bad: #f0796f; --bad-soft: #401a18; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 64px;
+}
+main { max-width: 1060px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+h1, h2 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(2rem, 5vw, 2.9rem); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 1.6rem; font-weight: 600; }
+p { margin: 0; }
+code, .mono { font-family: var(--font-mono); font-size: 0.88em; }
+code { background: var(--zone); padding: 1px 5px; border-radius: 4px; }
+.lede { max-width: 66ch; color: var(--muted); font-size: 1.08rem; }
+.eyebrow { font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+header { display: flex; flex-direction: column; gap: 14px; }
+section { display: flex; flex-direction: column; gap: 20px; }
+.section-intro { max-width: 66ch; color: var(--muted); }
+
+/* Scenario picker */
+.picker { display: flex; flex-wrap: wrap; gap: 8px; }
+.picker button {
+  font: 500 0.92rem var(--font-body); color: var(--ink); background: var(--surface); border: 1px solid var(--line);
+  border-radius: 999px; padding: 7px 14px; cursor: pointer;
+}
+.picker button:hover { border-color: var(--accent); }
+.picker button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.picker button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.map-wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+.diagram-scroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+.diagram-scroll svg { display: block; width: 100%; min-width: 760px; height: auto; }
+
+/* SVG */
+.zone { fill: var(--zone); stroke: none; }
+.zone-label { font: 600 13px var(--font-mono); fill: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+.node rect { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; transition: fill .25s, stroke .25s, opacity .25s; }
+.node .t { font: 600 15px var(--font-body); fill: var(--ink); }
+.node .s { font: 400 12.5px var(--font-body); fill: var(--muted); }
+.node .m { font: 500 12.5px var(--font-mono); fill: var(--ink); }
+.node.container rect { fill: none; stroke-dasharray: 5 4; }
+.node { transition: opacity .25s; }
+.dim .node:not(.on):not(.down) { opacity: 0.35; }
+.node.on rect { stroke: var(--accent); stroke-width: 2.2; fill: var(--accent-soft); }
+.node.container.on rect { fill: none; }
+.node.down rect { stroke: var(--bad); stroke-width: 2.2; fill: var(--bad-soft); stroke-dasharray: 6 4; }
+.node.down .t { fill: var(--bad); }
+.edge { fill: none; stroke: var(--line); stroke-width: 1.6; marker-end: url(#arr); transition: opacity .25s; }
+.edge.bi { marker-start: url(#arr); }
+.dim .edge:not(.on) { opacity: 0.35; }
+.edge.on { stroke: var(--accent); stroke-width: 2.4; stroke-dasharray: 7 5; marker-end: url(#arr-on); animation: flow 0.9s linear infinite; }
+.edge.on.bi { marker-start: url(#arr-on); }
+.arr-fill { fill: var(--line); }
+.arr-on-fill { fill: var(--accent); }
+.elabel { font: 500 11.5px var(--font-mono); fill: var(--muted); }
+@keyframes flow { to { stroke-dashoffset: -24; } }
+@media (prefers-reduced-motion: reduce) { .edge.on { animation: none; } * { transition: none !important; } }
+
+.legend { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 0.86rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.sw { width: 22px; height: 12px; border-radius: 3px; border: 2px solid; display: inline-block; }
+.sw.on { border-color: var(--accent); background: var(--accent-soft); }
+.sw.down { border-color: var(--bad); background: var(--bad-soft); border-style: dashed; }
+.sw.idle { border-color: var(--line); background: var(--surface); opacity: .5; }
+
+/* Steps panel */
+.steps { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px 24px; display: flex; flex-direction: column; gap: 14px; }
+.steps-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; }
+.steps-head h3 { font: 600 1.2rem var(--font-display); margin: 0; }
+.pill { font: 500 0.78rem var(--font-mono); padding: 3px 10px; border-radius: 999px; letter-spacing: .03em; }
+.pill.hot { background: var(--exp-soft); color: var(--exp); }
+.pill.bg { background: var(--base-soft); color: var(--base); }
+.pill.fail { background: var(--bad-soft); color: var(--bad); }
+.steps ol { margin: 0; padding-left: 1.4em; display: flex; flex-direction: column; gap: 10px; max-width: 80ch; }
+.steps li::marker { font-family: var(--font-mono); color: var(--accent); font-weight: 500; }
+.takeaway { border-top: 1px solid var(--line); padding-top: 12px; color: var(--muted); max-width: 80ch; }
+.takeaway b { color: var(--ink); }
+
+/* Two paths */
+.paths { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.path { background: var(--surface); border: 1px solid var(--line); border-top: 4px solid; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.path.hot { border-top-color: var(--exp); }
+.path.bg { border-top-color: var(--base); }
+.path h3 { margin: 0; font: 600 1.1rem var(--font-display); }
+.chain { font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.9; color: var(--ink); }
+.chain .arrow { color: var(--muted); }
+.budget { font-size: 0.92rem; color: var(--muted); }
+.budget b { color: var(--ink); }
+
+/* Parts list */
+.parts { border-top: 1px solid var(--line); }
+.part { display: grid; grid-template-columns: 190px minmax(0, 1fr) minmax(0, 1fr) 70px; gap: 6px 24px; padding: 16px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+.part .name { font-weight: 600; }
+.part .name small { display: block; font-weight: 400; color: var(--muted); font-family: var(--font-mono); font-size: 0.78rem; }
+.part .ex { color: var(--muted); font-size: 0.93rem; }
+.part .sec { font-family: var(--font-mono); font-size: 0.82rem; color: var(--accent); text-align: right; }
+.parts-head { color: var(--muted); font-family: var(--font-mono); font-size: 0.75rem; text-transform: uppercase; letter-spacing: .07em; padding-bottom: 8px; border-bottom: none; }
+@media (max-width: 760px) {
+  .part { grid-template-columns: minmax(0, 1fr) auto; }
+  .part .job, .part .ex { grid-column: 1 / -1; }
+  .part .sec { grid-row: 1; grid-column: 2; }
+  .parts-head { display: none; }
+}
+
+/* Rollout timelines */
+.timeline { display: flex; flex-direction: column; gap: 18px; }
+.track-row { display: flex; flex-direction: column; gap: 8px; }
+.track-row .label { font-weight: 600; }
+.track-row .label span { font-weight: 400; color: var(--muted); }
+.stages { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.stage { font: 500 0.85rem var(--font-mono); padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); white-space: nowrap; }
+.stage small { color: var(--muted); font-weight: 400; }
+.stage.good { border-color: var(--accent); background: var(--accent-soft); }
+.stage.warn { border-color: var(--exp); background: var(--exp-soft); }
+.stage.bad { border-color: var(--bad); background: var(--bad-soft); color: var(--bad); }
+.stages .sep { color: var(--muted); }
+.note { font-size: 0.92rem; color: var(--muted); max-width: 72ch; }
+
+footer { color: var(--muted); font-size: 0.9rem; border-top: 1px solid var(--line); padding-top: 18px; max-width: 72ch; }
+</style>
+
+<main>
+  <header>
+    <div class="eyebrow">Project 12 · system design · map</div>
+    <h1>AI Flag Platform Map</h1>
+    <p class="lede">The whole system on one page. Pick a scenario below and watch which parts light up. The running example is an email app that suggests subject lines, and Sara, one of its users.</p>
+  </header>
+
+  <section aria-labelledby="map-h">
+    <h2 id="map-h">The system, one scenario at a time</h2>
+    <div class="picker" role="tablist" aria-label="Scenarios" id="picker"></div>
+
+    <div class="map-wrap">
+      <div class="diagram-scroll">
+        <svg id="map" class="dim" viewBox="0 0 1000 590" role="img" aria-label="Architecture diagram: the company's email app with our SDK inside, our flag platform (API, PostgreSQL, Redis, quality worker, rollout controller, dashboard), and outside services (judge LLM, Slack).">
+          <defs>
+            <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arr-fill" d="M0 0 L10 5 L0 10 z"/></marker>
+            <marker id="arr-on" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arr-on-fill" d="M0 0 L10 5 L0 10 z"/></marker>
+          </defs>
+          <g id="zones"></g>
+          <g id="edges"></g>
+          <g id="nodes"></g>
+        </svg>
+      </div>
+      <div class="legend">
+        <span><i class="sw on"></i>Involved in this scenario</span>
+        <span><i class="sw idle"></i>Not involved</span>
+        <span><i class="sw down"></i>Down / unreachable</span>
+        <span>Moving dashes show the direction data travels</span>
+      </div>
+
+      <div class="steps" aria-live="polite">
+        <div class="steps-head">
+          <h3 id="sc-title"></h3>
+          <span class="pill" id="sc-pill"></span>
+        </div>
+        <ol id="sc-steps"></ol>
+        <p class="takeaway" id="sc-take"></p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="paths-h">
+    <h2 id="paths-h">Two paths through the system</h2>
+    <p class="section-intro">Every part belongs to one of two paths. Whether the user is waiting decides how fast each path must be. Think of a restaurant: the waiter serves the plate right away, and the manager reads the reviews in the evening.</p>
+    <div class="paths">
+      <div class="path hot">
+        <span class="pill hot" style="align-self:flex-start">Hot path · the user is waiting</span>
+        <h3>Serve Sara her answer</h3>
+        <div class="chain">Sara clicks <span class="arrow">→</span> <code>evaluate()</code> <span class="arrow">→</span> app calls its LLM <span class="arrow">→</span> Sara sees the subject <span class="arrow">→</span> <code>track()</code></div>
+        <p class="budget">Our share of the wait: <b>under 1 ms</b>. <code>evaluate()</code> reads memory and <code>track()</code> drops a note in a queue. No network calls and no judging here.</p>
+      </div>
+      <div class="path bg">
+        <span class="pill bg" style="align-self:flex-start">Background · nobody is waiting</span>
+        <h3>Judge, decide, adjust</h3>
+        <div class="chain">queue <span class="arrow">→</span> worker <span class="arrow">→</span> judge LLM <span class="arrow">→</span> PostgreSQL <span class="arrow">→</span> controller <span class="arrow">→</span> new config <span class="arrow">→</span> SDKs</div>
+        <p class="budget">It can take <b>seconds or minutes</b>, and that's fine. A rollback reaches every app within about <b>30 s</b>, the SDK's refresh interval.</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="parts-h">
+    <h2 id="parts-h">Every part in one line</h2>
+    <p class="section-intro">The right column shows the design section (S0–S8 in your roadmap) where we design each part in detail.</p>
+    <div class="parts">
+      <div class="part parts-head"><span>Part</span><span>Its job</span><span>Simple example</span><span style="text-align:right">Section</span></div>
+      <div class="part"><span class="name">SDK<small>Python package</small></span><span class="job">Picks a variant instantly and reports what happened.</span><span class="ex">Sara's hash lands in bucket 3,412. The rollout is 5% (buckets 0–499), so she gets the baseline.</span><span class="sec">S2</span></div>
+      <div class="part"><span class="name">Flag API<small>FastAPI</small></span><span class="job">The only door for changing flags. Every change is logged.</span><span class="ex"><code>POST /flags/7/rollout</code> with <code>{"pct": 25, "reason": "stage 3"}</code></span><span class="sec">S3</span></div>
+      <div class="part"><span class="name">PostgreSQL<small>database</small></span><span class="job">Long-term memory: the source of truth.</span><span class="ex">Tables: <code>flags</code>, <code>audit_log</code>, <code>evaluations</code>, <code>rollback_events</code></span><span class="sec">S1</span></div>
+      <div class="part"><span class="name">Redis<small>in-memory store</small></span><span class="job">A fast copy of the config, plus a mailbox for events.</span><span class="ex">SDKs read config v18 from Redis. <code>track()</code> events wait in a stream for the worker.</span><span class="sec">S3 · S4</span></div>
+      <div class="part"><span class="name">Quality worker<small>arq / Python</small></span><span class="job">Takes events from the mailbox and scores a sample of them.</span><span class="ex">Picks 5% of events, asks the judge, saves <code>score = 4</code>.</span><span class="sec">S4 · S5</span></div>
+      <div class="part"><span class="name">Judge LLM<small>cheap or local model</small></span><span class="job">A teacher that grades answers from 1 to 5. It never fixes them.</span><span class="ex"><code>{"score": 2, "reason": "too long"}</code></span><span class="sec">S5</span></div>
+      <div class="part"><span class="name">Rollout controller<small>loop, every 30 s</small></span><span class="job">The decision maker: advance, pause, or roll back.</span><span class="ex">P10 = 2.4, below the 3.0 threshold for 50 evaluations in a row, so it rolls back.</span><span class="sec">S6</span></div>
+      <div class="part"><span class="name">Dashboard<small>Streamlit</small></span><span class="job">What humans see, including a rollback button.</span><span class="ex">A chart of experimental vs baseline quality, and the current stage (25%).</span><span class="sec">S7</span></div>
+      <div class="part"><span class="name">Slack<small>incoming webhook</small></span><span class="job">The alarm bell.</span><span class="ex">"subject_gen_v2 rolled back: P10 2.4 &lt; 3.0"</span><span class="sec">S7</span></div>
+      <div class="part"><span class="name">LLM provider<small>the company's</small></span><span class="job">Writes the actual answers. The app calls it, never our platform.</span><span class="ex">The app sends prompt v1 or v2, depending on what <code>evaluate()</code> returned.</span><span class="sec">n/a</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="roll-h">
+    <h2 id="roll-h">One rollout, start to finish</h2>
+    <p class="section-intro">The same machinery, seen over days instead of milliseconds. Two prompt versions, two endings.</p>
+    <div class="timeline">
+      <div class="track-row">
+        <div class="label">Prompt v2 <span>· a good version</span></div>
+        <div class="stages">
+          <span class="stage good">shadow <small>0% seen</small></span><span class="sep">→</span>
+          <span class="stage good">1% <small>2 h</small></span><span class="sep">→</span>
+          <span class="stage good">5% <small>6 h</small></span><span class="sep">→</span>
+          <span class="stage good">25% <small>24 h</small></span><span class="sep">→</span>
+          <span class="stage good">50% <small>24 h</small></span><span class="sep">→</span>
+          <span class="stage good">100% ✓</span>
+        </div>
+      </div>
+      <div class="track-row">
+        <div class="label">Prompt v3 <span>· deliberately bad: "answer in capitals, max 2 words"</span></div>
+        <div class="stages">
+          <span class="stage good">shadow <small>0% seen</small></span><span class="sep">→</span>
+          <span class="stage good">1% <small>2 h</small></span><span class="sep">→</span>
+          <span class="stage warn">5% <small>quality falling</small></span><span class="sep">→</span>
+          <span class="stage bad">rollback → 0% · Slack alert · 1 h cooldown</span>
+        </div>
+      </div>
+      <p class="note">At every arrow the controller checks the numbers: enough samples, and is the experimental version statistically no worse than the baseline? Only then does it advance. Because v3 was stopped at 5%, at most 1 user in 20 ever saw it.</p>
+    </div>
+  </section>
+
+  <footer>Built from our coaching sessions. Next design step: S1, the data model, where these boxes become real tables.</footer>
+</main>
+
+<script>
+const NODES = {
+  user:       { x: 56,  y: 96,  w: 210, h: 56,  t: "End user · Sara", s: ["clicks “Suggest subject”"] },
+  app:        { x: 40,  y: 196, w: 242, h: 240, t: "Email app (company)", container: true },
+  sdk:        { x: 60,  y: 236, w: 202, h: 180, t: "Our SDK", mono: ["evaluate() → variant", "track()    → report", "cache: config v17"] },
+  llm:        { x: 56,  y: 480, w: 210, h: 64,  t: "LLM provider", s: ["the company's model API"] },
+  admin:      { x: 356, y: 96,  w: 180, h: 56,  t: "Admin / engineer", s: ["sets rules, reads results"] },
+  dashboard:  { x: 562, y: 96,  w: 180, h: 56,  t: "Dashboard", s: ["Streamlit"] },
+  api:        { x: 356, y: 210, w: 180, h: 64,  t: "Flag API", s: ["FastAPI · the only door"] },
+  postgres:   { x: 562, y: 210, w: 180, h: 64,  t: "PostgreSQL", s: ["flags · audit · scores"] },
+  redis:      { x: 356, y: 340, w: 180, h: 64,  t: "Redis", s: ["config copy · event queue"] },
+  worker:     { x: 562, y: 340, w: 180, h: 64,  t: "Quality worker", s: ["scores in background"] },
+  controller: { x: 562, y: 480, w: 180, h: 64,  t: "Rollout controller", s: ["checks every 30 s"] },
+  judge:      { x: 808, y: 340, w: 160, h: 64,  t: "Judge LLM", s: ["grades 1–5"] },
+  slack:      { x: 808, y: 480, w: 160, h: 64,  t: "Slack", s: ["rollback alerts"] },
+};
+const EDGES = {
+  user_app:      { d: "M161 152 V196", bi: true },
+  app_llm:       { d: "M161 436 V480", bi: true, label: ["prompt / answer", 170, 463, "start"] },
+  sdk_api:       { d: "M356 250 L262 292", label: ["config pull", 309, 302, "middle"] },
+  sdk_redis:     { d: "M262 384 L356 374", label: ["track()", 309, 364, "middle"] },
+  admin_dash:    { d: "M536 124 H562" },
+  dash_api:      { d: "M600 152 L500 210" },
+  api_pg:        { d: "M536 242 H562" },
+  api_redis:     { d: "M446 274 V340", label: ["copy", 454, 312, "start"] },
+  redis_worker:  { d: "M536 372 H562" },
+  worker_pg:     { d: "M652 340 V274", label: ["scores", 660, 312, "start"] },
+  worker_judge:  { d: "M742 372 H808", bi: true, label: ["grade", 775, 364, "middle"] },
+  ctrl_pg:       { d: "M742 496 H768 V250 H742", bi: true },
+  ctrl_redis:    { d: "M562 512 H446 V404", label: ["update config", 504, 530, "middle"] },
+  ctrl_slack:    { d: "M742 524 H808", label: ["alert", 775, 516, "middle"] },
+};
+const SCENARIOS = [
+  {
+    id: "request", tab: "1 · A normal request", title: "Sara asks for a subject line", pill: ["hot", "Hot path · Sara is waiting"],
+    cache: "v17",
+    nodes: ["user", "app", "sdk", "llm", "redis"], edges: ["user_app", "app_llm", "sdk_redis"],
+    steps: [
+      "Sara writes an invoice email and clicks <b>Suggest subject</b>.",
+      "The app calls <code>evaluate(\"subject_gen_v2\", {user_id: \"sara\"})</code>. The SDK reads its in-memory cache (config v17, rollout 5%). <code>hash(\"subject_gen_v2\" + \"sara\")</code> gives bucket 3,412. Only buckets 0–499 get the new version, so Sara gets the <b>baseline</b>. Time taken: about 0.02 ms, with no network call.",
+      "The app calls its own LLM with the baseline prompt (v1) and gets <i>“Invoice for October”</i>.",
+      "Sara sees the subject. She has waited only for the LLM, not for us.",
+      "The app calls <code>track()</code>. The SDK drops an event (variant, output, 820 ms latency, config v17) into the Redis queue and returns immediately.",
+    ],
+    take: "<b>Lesson:</b> our platform never sits between Sara and the answer. The SDK decides from memory, and the report is fire-and-forget.",
+  },
+  {
+    id: "change", tab: "2 · Admin changes a flag", title: "An engineer moves the rollout from 5% to 25%", pill: ["bg", "Background · no user waits"],
+    cache: "v18",
+    nodes: ["admin", "dashboard", "api", "postgres", "redis", "sdk", "app"], edges: ["admin_dash", "dash_api", "api_pg", "api_redis", "sdk_api"],
+    steps: [
+      "In the dashboard, the engineer sets <code>subject_gen_v2</code> to 25% with the reason <i>“quality stable for 6 h”</i>.",
+      "The dashboard calls <code>POST /flags/7/rollout</code> on the Flag API. The dashboard never writes to the database directly.",
+      "In <b>one transaction</b>, the API updates the flag, writes an <code>audit_log</code> row (who, what, why), and bumps the config version from 17 to <b>18</b>.",
+      "The API copies config v18 into Redis so SDKs can fetch it quickly.",
+      "Within 30 s, each SDK asks <i>“anything newer than 17?”</i> and downloads v18. Sara's bucket (3,412) is still above 2,499, so she stays on the baseline. She would switch at 35%.",
+    ],
+    take: "<b>Lesson:</b> changes flow out through the config version. One transaction means an SDK can never miss a change.",
+  },
+  {
+    id: "scoring", tab: "3 · Quality scoring", title: "The worker grades an answer in the background", pill: ["bg", "Background · no user waits"],
+    cache: "v18",
+    nodes: ["redis", "worker", "judge", "postgres"], edges: ["redis_worker", "worker_judge", "worker_pg"],
+    steps: [
+      "The worker picks up the next event from the Redis queue: user Tom got the <b>experimental</b> variant, which produced <i>“Your October invoice is ready”</i>.",
+      "Sampling is 5%, and this event is one of the chosen ones. The other 95% only record latency and errors.",
+      "The worker sends the input and output to the judge LLM with a rubric: <i>“5 = clear, short, on topic … 1 = wrong or unreadable”</i>.",
+      "The judge replies <code>{\"score\": 4, \"reason\": \"clear and short\"}</code>.",
+      "The worker writes a row to <code>evaluations</code>: variant, score 4, latency, <code>config_version = 18</code>. Tom got his answer seconds ago and never waited for any of this.",
+    ],
+    take: "<b>Lesson:</b> the judge grades and never fixes. Scoring happens after the answer is served, so it adds zero latency.",
+  },
+  {
+    id: "rollback", tab: "4 · Automatic rollback", title: "A bad prompt is caught and switched off", pill: ["bg", "Background · automatic"],
+    cache: "v19",
+    nodes: ["controller", "postgres", "redis", "slack", "sdk", "app"], edges: ["ctrl_pg", "ctrl_redis", "ctrl_slack", "sdk_api"],
+    steps: [
+      "Every 30 s, the controller reads recent scores from PostgreSQL and computes rolling windows for each variant.",
+      "Experimental: mean 2.9, <b>P10 = 2.4</b>, below the 3.0 threshold for 50 evaluations in a row. Baseline: mean 4.1. The rule fires.",
+      "In one transaction: rollout goes to <b>0%</b>, config version goes to <b>19</b>, and a <code>rollback_events</code> row stores the numbers and the reason. Redis gets the new config.",
+      "Slack receives: <i>“subject_gen_v2 rolled back at 5%: P10 2.4 &lt; 3.0 over 50 evals.”</i>",
+      "Within 30 s, every SDK fetches v19, and <b>everyone</b> gets the baseline. A 1-hour cooldown stops the flag from flapping back on.",
+    ],
+    take: "<b>Lesson:</b> decisions are made per version, not per answer. A few users saw bad subjects, and the gradual rollout kept that number small.",
+  },
+  {
+    id: "down", tab: "5 · Platform is down", title: "Our servers crash. Sara notices nothing", pill: ["fail", "Failure · the app must keep working"],
+    cache: "v19 (kept)",
+    nodes: ["user", "app", "sdk", "llm"], edges: ["user_app", "app_llm"], down: ["api", "redis", "postgres", "worker", "controller", "dashboard"],
+    steps: [
+      "The flag platform goes down: the API, Redis and the database are unreachable.",
+      "The SDK's 30 s refresh fails. It <b>keeps its last copy</b> (config v19) and logs a warning.",
+      "Sara clicks <b>Suggest subject</b>. <code>evaluate()</code> still answers from memory in under 1 ms.",
+      "<code>track()</code> can't reach the queue, so it drops the event and logs it. It never blocks or throws an error into the app.",
+      "Edge case: an app that has just started has no cache at all, so it serves the <b>baseline</b> to everyone (<code>reason = \"fallback\"</code>).",
+    ],
+    take: "<b>Lesson:</b> the flag system must never break the host app. The worst outcome of an outage is “everyone gets the safe version”.",
+  },
+];
+
+const svgNS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs, parent) => { const n = document.createElementNS(svgNS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (parent) parent.appendChild(n); return n; };
+
+const zones = document.getElementById("zones");
+[[16, 52, 290, 516, "Company side"], [330, 52, 430, 516, "Our flag platform"], [784, 52, 200, 516, "Outside services"]].forEach(([x, y, w, h, label]) => {
+  el("rect", { x, y, width: w, height: h, rx: 16, class: "zone" }, zones);
+  el("text", { x: x + 16, y: y + 26, class: "zone-label" }, zones).textContent = label;
+});
+
+const edgeG = document.getElementById("edges");
+const edgeEls = {};
+for (const [id, e] of Object.entries(EDGES)) {
+  edgeEls[id] = el("path", { d: e.d, class: "edge" + (e.bi ? " bi" : "") }, edgeG);
+  if (e.label) {
+    const [txt, x, y, anchor] = e.label;
+    el("text", { x, y, "text-anchor": anchor, class: "elabel" }, edgeG).textContent = txt;
+  }
+}
+
+const nodeG = document.getElementById("nodes");
+const nodeEls = {};
+let cacheText = null;
+for (const [id, n] of Object.entries(NODES)) {
+  const g = el("g", { class: "node" + (n.container ? " container" : "") }, nodeG);
+  el("rect", { x: n.x, y: n.y, width: n.w, height: n.h, rx: 10 }, g);
+  el("text", { x: n.x + 14, y: n.y + 25, class: "t" }, g).textContent = n.t;
+  (n.s || []).forEach((line, i) => { el("text", { x: n.x + 14, y: n.y + 45 + i * 16, class: "s" }, g).textContent = line; });
+  (n.mono || []).forEach((line, i) => {
+    const t = el("text", { x: n.x + 14, y: n.y + 60 + i * 30, class: "m", "xml:space": "preserve" }, g);
+    t.textContent = line;
+    if (line.startsWith("cache")) cacheText = t;
+  });
+  nodeEls[id] = g;
+}
+
+const picker = document.getElementById("picker");
+const buttons = SCENARIOS.map((sc, i) => {
+  const b = document.createElement("button");
+  b.type = "button"; b.id = "tab-" + sc.id; b.setAttribute("role", "tab"); b.textContent = sc.tab;
+  b.addEventListener("click", () => show(i));
+  picker.appendChild(b);
+  return b;
+});
+
+function show(i) {
+  const sc = SCENARIOS[i];
+  buttons.forEach((b, j) => b.setAttribute("aria-selected", String(i === j)));
+  for (const [id, g] of Object.entries(nodeEls)) {
+    g.classList.toggle("on", sc.nodes.includes(id));
+    g.classList.toggle("down", (sc.down || []).includes(id));
+  }
+  for (const [id, p] of Object.entries(edgeEls)) p.classList.toggle("on", sc.edges.includes(id));
+  if (cacheText) cacheText.textContent = "cache: config " + sc.cache;
+  document.getElementById("sc-title").textContent = sc.title;
+  const pill = document.getElementById("sc-pill");
+  pill.className = "pill " + sc.pill[0]; pill.textContent = sc.pill[1];
+  document.getElementById("sc-steps").innerHTML = sc.steps.map(s => "<li>" + s + "</li>").join("");
+  document.getElementById("sc-take").innerHTML = sc.take;
+  try { localStorage.setItem("afp-scenario", String(i)); } catch (e) {}
+}
+
+let start = 0;
+try { const saved = parseInt(localStorage.getItem("afp-scenario"), 10); if (saved >= 0 && saved < SCENARIOS.length) start = saved; } catch (e) {}
+show(start);
+</script>
+
+</body></html>
